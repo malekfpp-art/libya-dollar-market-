@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سوق الدولار الليبي - P2P</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #22c55e;
+            --danger: #ef4444;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+        body { background-color: var(--bg-dark); color: var(--text-main); padding-bottom: 70px; }
+        header { background: var(--card-bg); padding: 15px; text-align: center; border-bottom: 1px solid #334155; }
+        h1 { font-size: 1.25rem; color: var(--accent); }
+        .container { padding: 15px; max-width: 600px; margin: 0 auto; }
+        .card { background: var(--card-bg); border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 1px solid #334155; }
+        .btn { background: var(--primary); color: white; border: none; padding: 10px 15px; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-success { background: var(--accent); }
+        .btn-danger { background: var(--danger); }
+        input, select { width: 100%; padding: 10px; margin: 8px 0; background: #0f172a; border: 1px solid #475569; color: white; border-radius: 8px; }
+        .offer-item { background: #0f172a; padding: 12px; border-radius: 8px; margin-bottom: 10px; border-right: 4px solid var(--primary); }
+        .flex { display: flex; gap: 10px; }
+        .badge { font-size: 0.75rem; padding: 3px 8px; border-radius: 4px; background: #334155; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>💱 سوق الدولار الليبي - P2P</h1>
+    </header>
+
+    <div class="container">
+        <!-- قسم إضافة عرض -->
+        <div class="card">
+            <h3>إضافة عرض جديد</h3>
+            <input type="number" id="offerQty" placeholder="الكمية ($)">
+            <input type="number" id="offerPrice" placeholder="السعر بالدينار لكل دولار">
+            <input type="text" id="offerTelegram" placeholder="معرف تيليجرام (مثل: @username)">
+            <button class="btn btn-success" onclick="addNewOffer()">نشر العرض</button>
+        </div>
+
+        <!-- قائمة العروض -->
+        <div class="card">
+            <h3>العروض المتاحة بالسوق</h3>
+            <div id="offersList" style="margin-top: 10px;">
+                <!-- العروض تظهر هنا ديناميكياً -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let offers = JSON.parse(localStorage.getItem('ly_offers')) || [
+            { id: 1, qty: 500, price: 6.85, telegram: '@Trader_Ly', reports: 0 },
+            { id: 2, qty: 1200, price: 6.83, telegram: '@LibyaCash', reports: 0 }
+        ];
+
+        function renderOffers() {
+            const list = document.getElementById('offersList');
+            list.innerHTML = '';
+            if(offers.length === 0) {
+                list.innerHTML = '<p style="color:var(--text-muted); text-align:center;">لا توجد عروض متاحة حالياً.</p>';
+                return;
+            }
+            offers.forEach(item => {
+                list.innerHTML += `
+                    <div class="offer-item">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                            <strong>${item.qty} $</strong>
+                            <span style="color:var(--accent);">${item.price} د.ل / $</span>
+                        </div>
+                        <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:8px;">التواصل: ${item.telegram}</p>
+                        <div class="flex">
+                            <a href="https://t.me/${item.telegram.replace('@','')}" target="_blank" style="flex:1;"><button class="btn" style="margin:0; padding:6px;">مراسلة</button></a>
+                            <button class="btn btn-danger" style="flex:1; margin:0; padding:6px;" onclick="reportOffer(${item.id})">إبلاغ (${item.reports})</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function addNewOffer() {
+            const qty = document.getElementById('offerQty').value;
+            const price = document.getElementById('offerPrice').value;
+            const telegram = document.getElementById('offerTelegram').value;
+
+            if(!qty || !price || !telegram) {
+                alert('الرجاء تعبئة جميع الحقول!');
+                return;
+            }
+
+            offers.unshift({
+                id: Date.now(),
+                qty: parseFloat(qty),
+                price: parseFloat(price),
+                telegram: telegram,
+                reports: 0
+            });
+
+            localStorage.setItem('ly_offers', JSON.stringify(offers));
+            renderOffers();
+
+            document.getElementById('offerQty').value = '';
+            document.getElementById('offerPrice').value = '';
+            document.getElementById('offerTelegram').value = '';
+            alert('تم نشر العرض بنجاح!');
+        }
+
+        function reportOffer(id) {
+            const item = offers.find(o => o.id === id);
+            if(item) {
+                item.reports++;
+                if(item.reports >= 3) {
+                    offers = offers.filter(o => o.id !== id);
+                    alert('تم حذف العرض لتجاوزه حد البلاغات.');
+                } else {
+                    alert('تم تسجيل إبلاغك بنجاح.');
+                }
+                localStorage.setItem('ly_offers', JSON.stringify(offers));
+                renderOffers();
+            }
+        }
+
+        renderOffers();
+    </script>
+</body>
+</html>
